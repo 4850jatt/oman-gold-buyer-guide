@@ -137,8 +137,49 @@ export default function App() {
 
   // Fetch real-time Omani gold rates from our live market endpoint on mount
   useEffect(() => {
+    // Client-side direct fallback option in case backend is missing/404 or statically served on static hosts
+    const fetchDirectFallback = async () => {
+      try {
+        const [goldRes, silverRes] = await Promise.all([
+          fetch('https://api.gold-api.com/price/XAU'),
+          fetch('https://api.gold-api.com/price/XAG')
+        ]);
+        if (!goldRes.ok || !silverRes.ok) return;
+        const goldData = await goldRes.json();
+        const silverData = await silverRes.json();
+        const goldUsd = goldData?.price;
+        const silverUsd = silverData?.price;
+        
+        if (typeof goldUsd === 'number' && typeof silverUsd === 'number') {
+          const goldGramUsd = goldUsd / 31.1034768;
+          const karat24 = parseFloat((goldGramUsd * 0.3845).toFixed(3));
+          
+          const silverGramUsd = silverUsd / 31.1034768;
+          const silver = parseFloat((silverGramUsd * 0.3845).toFixed(3));
+          
+          const karat22 = parseFloat((karat24 * 0.9167).toFixed(3));
+          const karat21 = parseFloat((karat24 * 0.875).toFixed(3));
+          const karat18 = parseFloat((karat24 * 0.750).toFixed(3));
+
+          setCurrentPrices({
+            karat24,
+            karat22,
+            karat21,
+            karat18,
+            silver,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.warn("Direct live Omani gold API fetch failed on static client:", err);
+      }
+    };
+
     fetch('/api/gold-rates')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Backend response not OK");
+        return res.json();
+      })
       .then(data => {
         if (data && typeof data.karat24 === 'number') {
           setCurrentPrices({
@@ -149,9 +190,15 @@ export default function App() {
             silver: data.silver,
             updatedAt: data.updatedAt || new Date().toISOString()
           });
+        } else {
+          // Fallback if data is not structured e.g. HTML (SPA fallback 404 rewrite)
+          fetchDirectFallback();
         }
       })
-      .catch(err => console.error("Error fetching live gold rates on init mount:", err));
+      .catch(err => {
+        console.warn("Backend rate fetch failed, trying direct coin/gold API fallback:", err);
+        fetchDirectFallback();
+      });
   }, []);
 
   // Urgency Timer Tick

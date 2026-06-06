@@ -54,12 +54,54 @@ export default function MetalDashboard({ currentPrices, lang, onPriceUpdate }: M
     ]
   };
 
+  // Client-side direct fallback option in case backend is missing/outdated
+  const fetchDirectFallbackDashboard = async (): Promise<any> => {
+    try {
+      const [goldRes, silverRes] = await Promise.all([
+        fetch('https://api.gold-api.com/price/XAU'),
+        fetch('https://api.gold-api.com/price/XAG')
+      ]);
+      if (!goldRes.ok || !silverRes.ok) return null;
+      const goldData = await goldRes.json();
+      const silverData = await silverRes.json();
+      const goldUsd = goldData?.price;
+      const silverUsd = silverData?.price;
+      
+      if (typeof goldUsd === 'number' && typeof silverUsd === 'number') {
+        const goldGramUsd = goldUsd / 31.1034768;
+        const karat24 = parseFloat((goldGramUsd * 0.3845).toFixed(3));
+        
+        const silverGramUsd = silverUsd / 31.1034768;
+        const silver = parseFloat((silverGramUsd * 0.3845).toFixed(3));
+        
+        const karat22 = parseFloat((karat24 * 0.9167).toFixed(3));
+        const karat21 = parseFloat((karat24 * 0.875).toFixed(3));
+        const karat18 = parseFloat((karat24 * 0.750).toFixed(3));
+
+        return {
+          karat24,
+          karat22,
+          karat21,
+          karat18,
+          silver,
+          updatedAt: new Date().toISOString()
+        };
+      }
+    } catch (err) {
+      console.warn("Dashboard direct gold API fallback fetch failed:", err);
+    }
+    return null;
+  };
+
   // Live background ticker calling real-time server rates
   useEffect(() => {
     const interval = setInterval(() => {
       fetch('/api/gold-rates')
-        .then(res => res.json())
-        .then(data => {
+        .then(res => {
+          if (!res.ok) throw new Error("Backend response failed");
+          return res.json();
+        })
+        .then(async data => {
           if (data && typeof data.karat24 === 'number') {
             const last24 = currentPrices.karat24;
             setTrendDirection(data.karat24 >= last24 ? 'up' : 'down');
@@ -71,9 +113,22 @@ export default function MetalDashboard({ currentPrices, lang, onPriceUpdate }: M
               silver: data.silver,
               updatedAt: data.updatedAt || new Date().toISOString()
             });
+          } else {
+            const fallbackData = await fetchDirectFallbackDashboard();
+            if (fallbackData) {
+              setTrendDirection(fallbackData.karat24 >= currentPrices.karat24 ? 'up' : 'down');
+              onPriceUpdate(fallbackData);
+            }
           }
         })
-        .catch(err => console.error("Error ticking live rates:", err));
+        .catch(async err => {
+          console.warn("Error ticking live rates through api endpoint, triggering dashboard direct fallback:", err);
+          const fallbackData = await fetchDirectFallbackDashboard();
+          if (fallbackData) {
+            setTrendDirection(fallbackData.karat24 >= currentPrices.karat24 ? 'up' : 'down');
+            onPriceUpdate(fallbackData);
+          }
+        });
     }, 60000); // Ticks every 60s
 
     return () => clearInterval(interval);
@@ -82,8 +137,11 @@ export default function MetalDashboard({ currentPrices, lang, onPriceUpdate }: M
   const forceRefresh = () => {
     setIsRefreshing(true);
     fetch('/api/gold-rates')
-      .then(res => res.json())
-      .then(data => {
+      .then(res => {
+        if (!res.ok) throw new Error("Backend response failed");
+        return res.json();
+      })
+      .then(async data => {
         if (data && typeof data.karat24 === 'number') {
           const last24 = currentPrices.karat24;
           setTrendDirection(data.karat24 >= last24 ? 'up' : 'down');
@@ -95,9 +153,22 @@ export default function MetalDashboard({ currentPrices, lang, onPriceUpdate }: M
             silver: data.silver,
             updatedAt: data.updatedAt || new Date().toISOString()
           });
+        } else {
+          const fallbackData = await fetchDirectFallbackDashboard();
+          if (fallbackData) {
+            setTrendDirection(fallbackData.karat24 >= currentPrices.karat24 ? 'up' : 'down');
+            onPriceUpdate(fallbackData);
+          }
         }
       })
-      .catch(err => console.error("Error refreshing live rates on click:", err))
+      .catch(async err => {
+        console.warn("Backend rate refresh failed, trying dashboard direct fallback:", err);
+        const fallbackData = await fetchDirectFallbackDashboard();
+        if (fallbackData) {
+          setTrendDirection(fallbackData.karat24 >= currentPrices.karat24 ? 'up' : 'down');
+          onPriceUpdate(fallbackData);
+        }
+      })
       .finally(() => {
         setIsRefreshing(false);
       });
