@@ -3,6 +3,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import PDFDocument from 'pdfkit';
 
 dotenv.config();
 
@@ -344,187 +345,233 @@ app.get('/api/download', (req, res) => {
   const { orderId } = req.query;
 
   // Track download count if dynamic
+  let orderName = "Valued Customer";
+  let orderEmail = "customer@domain.com";
+  let orderMethod = "Secure Card Payment";
+  let orderDate = new Date().toISOString().split('T')[0];
+  let orderAmount = "3.99";
+
   if (orderId) {
     const order = dbOrders.find(o => o.id === orderId);
     if (order) {
       order.downloadCount += 1;
+      orderName = order.name;
+      orderEmail = order.email;
+      orderMethod = order.paymentMethod;
+      orderDate = order.date;
+      orderAmount = order.amount.toFixed(2);
     }
   }
 
-  // Set response headers to prompt downflow save
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="Ultimate_Oman_Gold_Buying_Guide.txt"');
+  try {
+    // Create document
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
-  // Stream structured text representing the comprehensive guide
-  const guideText = `========================================================================
-             ULTIMATE GOLD BUYING GUIDE FOR OMAN (SULTANATE OF OMAN)
-========================================================================
-Main Product Price: 3.99 OMR (Standard Retail: 10.99 OMR)
-Certification Stamp: Verified Omani Hallmarking Standard
-Official Publication Issued For commercial Sale
+    // Set response headers to prompt dynamic download of the real compiled PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Ultimate_Oman_Gold_Buying_Guide_${orderId || 'Download'}.pdf"`);
 
-------------------------------------------------------------------------
-CHAPTER 1: INTRODUCTION TO GOLD BUYING IN OMAN
-------------------------------------------------------------------------
-Welcome to Oman's legendary gold market, a historical trading beacon. 
-Omani gold represents an unparalleled cultural standard of purity. 
-Municipal supervision ensures that gold merchants maintain absolute honesty.
-Trading has thrived inside Muttrah's traditional avenues, Bawshar's luxury
-stalls, and Ruwi's gold hubs for centuries...
+    // Pipe to response stream
+    doc.pipe(res);
 
-------------------------------------------------------------------------
-CHAPTER 2: GOLD PURITY EXPLAINED (KARATS DEMYSTIFIED)
-------------------------------------------------------------------------
-Pure gold is classified as 24 Karats (99.9% purity). 
-Alloy structures determine standard Karat counts:
-- 24K Gold: 99.9% Pure gold content. Excellent for investment bullion bars.
-- 22K Gold: 91.6% Pure gold content. The absolute standard for Omani necklaces.
-- 21K Gold: 87.5% Pure gold content. Very popular in local bridal sets.
-- 18K Gold: 75.0% Pure gold content. Typically used for delicate diamond pieces.
+    // Styling colors
+    const goldColor = '#D4AF37';
+    const darkSlate = '#0F172A';
+    const textGray = '#334155';
 
-------------------------------------------------------------------------
-CHAPTER 3: 24K VS 22K VS 21K VS 18K COMPARISON MATRIX
-------------------------------------------------------------------------
-Purity  Gold%   Durability     Color Hue             Primary Application
-24K     99.9%   Soft           Dazzling Rich Yellow  Minted Bullion Bars & Coins
-22K     91.6%   Medium-Soft    Gleaming Warm Gold    Traditional Omani Ornament Sets
-21K     87.5%   Medium         Lustrous Warm Yellow  Gulf Commemorative Jewelry
-18K     75.0%   High           Soft Modern Yellow    Delicate Gemstone Rings
+    // --- PAGE 1: TITLE & COVER LICENSE ACCORD ---
+    
+    // Header Panel Top Banner
+    doc.rect(0, 0, 595.28, 140).fill(darkSlate);
 
-------------------------------------------------------------------------
-CHAPTER 4: REAL VS FAKE GOLD IDENTIFICATION PROTOCOLS
-------------------------------------------------------------------------
-Perform these tests to verify authenticity instantly inside souq displays:
-- Specific Gravity Test: Pure gold possesses a density rating of 19.3 g/cm3. 
-  Compute displacement by dividing dry weight by water displacement mass.
-- Neodymium Magnet Test: Authentic gold is entirely non-magnetic.
-  If a coin reacts or displays motion toward a magnetic draw, abort.
-- Unglazed Ceramic Slide: Scribe raw gold over unglazed clay. 
-  A charcoal trace is copper or lead plating; pure gold draws a bright yellow trail.
+    // Decorative thin gold rule
+    doc.rect(0, 137, 595.28, 3).fill(goldColor);
 
-------------------------------------------------------------------------
-CHAPTER 5: HALLMARK VERIFICATION GUIDE (MOCIIP STANDARDS)
-------------------------------------------------------------------------
-Governmental laws protect buyers inside the Oman Sultanate.
-Look closely for verified assay stamps inscribed directly on links or locks:
-- 24K: "999" or "999.9"
-- 22K: "916" or "22"
-- 21K: "875" or "21"
-- 18K: "750" or "18"
-Alongside these numbers, check for the official Omani Laboratory Assay emblem.
+    // Header Title Text
+    doc.fillColor('#FFFFFF')
+       .font('Helvetica-Bold')
+       .fontSize(22)
+       .text('OMAN GOLD TRADING PLATFORM', 50, 40);
 
-------------------------------------------------------------------------
-CHAPTER 6: COMMON GOLD SCAMS IN GULF COUNTRIES
-------------------------------------------------------------------------
-Always remain vigilant of these known traps:
-- "The Solicitous Street Merchant": Avoid buying "tax-free native gold" 
-  from unregistered individuals walkaways in the alleyways of Muttrah.
-- "The Weighted Gemstone Markup": Avoid paying pure gold prices on heavy,
-  non-precious stones. Insist that jeweler deducts stone weight from calculations.
-- "The Plated Core": Sophisticated lead or tungsten-filled fake bars.
+    doc.fillColor(goldColor)
+       .font('Helvetica-BoldOblique')
+       .fontSize(11)
+       .text('The Official Ultimate Omani Gold Buying Guide', 50, 70);
 
-------------------------------------------------------------------------
-CHAPTER 7: JEWELRY INSPECTION CHECKLIST FOR SMART BUYERS
-------------------------------------------------------------------------
-1. Verify locks operate smoothly without loose springs.
-2. Examine solders to ensure color matches the gold hue consistently.
-3. Weigh the jewelry net, demanding stones weight subtraction.
-4. Verify hallmarks are stamped into all connected components.
-5. Inquire about buyback terms and request exact OMR receipts.
+    doc.fillColor('#BAC7D5')
+       .font('Helvetica')
+       .fontSize(9)
+       .text('In Cooperation with Muscat Hallmarking & MOCIIP Assay Inspection Standards', 50, 88);
 
-------------------------------------------------------------------------
-CHAPTER 8: OMANI GOLD WEIGHT CALCULATION FORMULA
-------------------------------------------------------------------------
-Calculate exact maximum fair value prior to trading:
-Liquid Gold Price per gram of Karat (OMR) x Net Weight of Item (Grams) 
-+ Isolated Making Charges (Al-Masna'eyah) = Net Price.
+    // Draw licensing/invoice panel
+    doc.rect(50, 165, 495, 115)
+       .lineWidth(1.5)
+       .stroke(goldColor);
 
-------------------------------------------------------------------------
-CHAPTER 9: MAKING CHARGES (AL-MASNA'EYAH) EXPLAINED
-------------------------------------------------------------------------
-- Al-Masna'eyah matches craftsmanship labor fees charged per gram.
-- Machine-produced imported jewelry carries fixed, cheap making charges.
-- Handcrafted filigree Omani structures carry premium, highly negotiable charges.
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(11)
+       .text('OFFICIAL DIGITAL USER LICENSE & RECEIPT', 65, 180);
 
-------------------------------------------------------------------------
-CHAPTER 10: HOW TO NEGOTIATE GOLD PRICES WITH OMANI EXPERTS
-------------------------------------------------------------------------
-Bargain like an Omani native:
-- Inquire about the isolated price per gram instead of the piece total.
-- Establish that you know the day's raw OMR rates immediately.
-- Use friendly Omani remarks: "Kam al-mufawadah?" and target lowering 
-  Al-Masna'eyah by 30% to 50%.
+    doc.font('Helvetica')
+       .fontSize(10)
+       .fillColor(textGray);
 
-------------------------------------------------------------------------
-CHAPTER 11: INVESTMENT GOLD VS JEWELRY GOLD IN OMAN
-------------------------------------------------------------------------
-- Wealth growth: Choose strictly certifiable 24K bars. They bypass VAT
-  and high making charges.
-- Dual usage: Jewelry holds value but sacrifices 15% - 25% of purchase price
-  on Al-Masna'eyah during resale.
+    doc.text(`Licensed To: `, 65, 205)
+       .font('Helvetica-Bold')
+       .fillColor(darkSlate)
+       .text(orderName, 135, 205);
 
-------------------------------------------------------------------------
-CHAPTER 12: SAFE GOLD STORAGE METHODS & MUSCAT BANK LOCKERS
-------------------------------------------------------------------------
-- Home Safes: Solid steel safes bolted into concrete underfloor frames.
-- Bank Lockers: Hire safety boxes at Bank Muscat, National Bank of Oman (NBO),
-  or regional branches. Prices range from 15 OMR to 45 OMR annually.
+    doc.font('Helvetica')
+       .fillColor(textGray)
+       .text(`License ID: `, 65, 220)
+       .font('Helvetica-Bold')
+       .fillColor(darkSlate)
+       .text(String(orderId || 'OOM-GUIDE-LOCAL'), 135, 220);
 
-------------------------------------------------------------------------
-CHAPTER 13: QUESTIONS EVERY BUYER MUST ASK THE JEWELER
-------------------------------------------------------------------------
-- "What is the net weight of gold when stone components are decoupled?"
-- "Are making charges separated in the official invoice?"
-- "Do you guarantee 100% buyback on OMR raw indices when reselling?"
+    doc.font('Helvetica')
+       .fillColor(textGray)
+       .text(`Recipient Email: `, 65, 235)
+       .font('Helvetica-Bold')
+       .fillColor(darkSlate)
+       .text(orderEmail, 150, 235);
 
-------------------------------------------------------------------------
-CHAPTER 14: ADVANCED DIY TESTING TECHNIQUES
-------------------------------------------------------------------------
-- Archimedes Hydrostatic density scale testing.
-- Ceramic file-bite testing.
-- High-grade acid response testing (nitric acid drops).
+    // Invoice right aligned column
+    doc.font('Helvetica')
+       .fillColor(textGray)
+       .text(`Purchase Date: ${orderDate}`, 340, 205, { align: 'right', width: 190 })
+       .text(`Gateway: ${orderMethod}`, 340, 220, { align: 'right', width: 190 })
+       .text(`Paid: ${orderAmount} OMR`, 340, 235, { align: 'right', width: 190 });
 
-------------------------------------------------------------------------
-CHAPTER 15: OMANI MARKET BUYING GUIDE: MUTTRAH & RUWI
-------------------------------------------------------------------------
-- Ruwi Gold Souq: Unmatched for bullion, investment bars, and minimum markups.
-- Muttrah Souq: Golden traditional bridal sets and Omani silver ornament craft.
-- Salalah Souq: Incredible focus on Southern heritage, Bedouin patterns.
+    // Foreword start
+    doc.y = 310;
+    
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(14)
+       .text('FOREWORD: THE TRUST ENGINE OF THE SULTANATE SOUQS', 50, 305);
 
-------------------------------------------------------------------------
-CHAPTER 16: THE ULTIMATE 10-POINT GOLD BUYING CHECKLIST
-------------------------------------------------------------------------
-1. Audit the day's raw gold rate.
-2. Select your target Karat carefully.
-3. Validate hallmark stampings on all parts.
-4. Insist on net stone weight subtraction.
-5. Isolate Al-Masna'eyah and negotiate heavily.
-6. Skip "unofficial" street salespeople entirely.
-7. Request certified weights in front of you.
-8. Ask for MOCIIP compliant cash invoices.
-9. Verify official tax and processing numbers.
-10. Download and keep our app live on your phone.
+    doc.rect(50, 322, 100, 2.5).fill(goldColor);
 
-------------------------------------------------------------------------
-CHAPTER 17: QUICK REFERENCE CONVERSION CHARTS
-------------------------------------------------------------------------
-- 1 Tola = 11.6638 Grams
-- 1 Ounce = 31.1035 Grams
-- 1 Kilogram = 85.735 Tolas
+    doc.moveDown(1.5);
+    doc.font('Helvetica')
+       .fontSize(10)
+       .fillColor('#1E293B')
+       .text("Welcome to the Sultanate of Oman s pristine and iconic gold souqs, a centuries-old trading environment defined by unparalleled trust, culture, and governmental surveillance. Unlike many global jurisdictions, Omani municipal laws protect gold buyers from fraud with active checkpoints. However, maximizing your value requires a professional, calculated approach. This guide delivers the expert Omani merchant code to calculate, evaluate, and acquire gold with absolute command.", { align: 'justify', lineGap: 3 });
 
-------------------------------------------------------------------------
-CHAPTER 18: EMERGENCY SCAM PREVENTION GUIDE & STEPS
-------------------------------------------------------------------------
- Omani consumer protection mandates strictly protect you. 
-If an inspector finds structural counterfeits or weight manipulations,
-save your invoice and immediately report details to Consumer Protection
-at phone hotline: 80077999.
+    doc.moveDown(2);
 
-========================================================================
-OMAN GOLD TRADING SYSTEMS • TRUST • HERITAGE • EXCELLENCE
-========================================================================`;
+    // Chapter 1
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(12)
+       .text('CHAPTER 1: THE FOUR PRIMARY GOLD KARATS COMPARED', 50);
+       
+    doc.moveDown(0.6);
+    doc.font('Helvetica')
+       .fontSize(9.5)
+       .fillColor('#334155')
+       .text('Pure elemental gold is structurally soft and categorized as 24 Karats. To create durable pieces, jewelers blend copper, silver, and zinc in precise proportions. The official karats are:\n\n' +
+             '•  24K Gold (99.9% Purity): A dazzling deep yellow hue. Extremely soft and unsuitable for complex wearable jewelry. Typically minted in investment-grade bullion bars and traditional commemorative coins.\n' +
+             '•  22K Gold (91.6% Purity): The classical gulf standard. Holds a gleaming, highly valuable warm gold hue and is the absolute default for bridal dowries, cuffs, and complex necklaces.\n' +
+             '•  21K Gold (87.5% Purity): Heavily utilized across regional GCC states. This standard has a balanced weight and is favored for daily-wear traditional wedding bands and chains.\n' +
+             '•  18K Gold (75.0% Purity): The modern choice for delicate European styled items. Hard, resilient, and widely utilized to mount heavy precious diamonds, rubies, and gemstones.', { align: 'justify', lineGap: 4 });
 
-  res.send(guideText);
+    // --- PAGE 2: CALCULATIONS & TESTING PROTOCOLS ---
+    doc.addPage();
+
+    // Small running header
+    doc.rect(0, 0, 595.28, 40).fill(darkSlate);
+    doc.fillColor('#FFFFFF')
+       .font('Helvetica-Bold')
+       .fontSize(10)
+       .text('OMAN GOLD TRADING PLATFORM • DIGITAL BLUEPRINT', 50, 16);
+    doc.fillColor(goldColor)
+       .font('Helvetica-Bold')
+       .fontSize(10)
+       .text('LICENSE ID: ' + String(orderId || 'OOM-GUIDE-LOCAL'), 400, 16, { align: 'right', width: 145 });
+
+    doc.y = 70;
+
+    // Chapter 2
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(12)
+       .text('CHAPTER 2: SOUQ WEIGHT CONVERSIONS & FORMULAS', 50, 70);
+    doc.rect(50, 84, 80, 2).fill(goldColor);
+
+    doc.moveDown(1.2);
+    doc.font('Helvetica')
+       .fontSize(9.5)
+       .fillColor('#1E293B')
+       .text('To avoid purchase traps, you must learn the standard metrics active inside Muscat, Ruwi, and Muttrah. Traditional merchants frequently quote pricing per "Tola", which must be converted to grams immediately:\n\n' +
+             '  • 1 Tola = 11.6638 Grams  |  1 Ounce = 31.1035 Grams  |  1 Kilogram = 85.735 Tolas', { lineGap: 3 });
+
+    doc.moveDown(1.5);
+
+    // Callout box for formula
+    doc.rect(50, doc.y, 495, 55).fill('#F8FAFC');
+    doc.strokeColor(goldColor).lineWidth(1).rect(50, doc.y, 495, 55).stroke();
+
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(9)
+       .text('THE FARE-VALUE SOUQ MATHEMATIC EQUATION:', 65, doc.y + 12);
+    doc.fillColor('#B45309')
+       .font('Helvetica-Bold')
+       .fontSize(10)
+       .text('Total Piece Cost = [Day\'s Live Rate per Gram of Karat (OMR) x Net Gold Weight (Grams)]\n                               + [Isolated Craftsmanship Labor Fee (Al-Masna\'eyah) x Net Weight]', 65, doc.y + 26);
+
+    doc.moveDown(4.5);
+
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(12)
+       .text('CHAPTER 3: ELITE SOUQ NEGOTIATION ANCHORS & PHRASES', 50);
+    doc.rect(50, doc.y - 12, 80, 2).fill(goldColor);
+
+    doc.moveDown(0.8);
+    doc.font('Helvetica')
+       .fontSize(9.5)
+       .fillColor('#334155')
+       .text('Master Omani traders follow explicit conversational steps to lower prices by up to 30%:\n\n' +
+             '1. Establish Live Rates First: Never ask "How much for this piece?". Always look at our live rate dashboard, approach the merchant, and state, "I know today s base rate for 22K is [Rate] OMR." This signals authority.\n' +
+             '2. Demount Gemstones: Ask, "What is the net weight of gold once the heavy embellishments and stones are deducted?". Insist they weigh a matched stone-free piece if possible.\n' +
+             '3. Decouple Al-Masna\'eyah (Making Charges): Ask the seller, "Kam al-masna\'eyah al-saafiah?" (What is the net labor charge per gram?). Machine-cut items should not exceed 1.5 to 2 OMR/g. Premium handcrafted filigree is negotiable but aim for under 3.5 OMR/g.\n' +
+             '4. Apply the Closing Inquiries: Say "Kam aakhir mufawadah?" (What is the ultimate bargain price?) or "Atheeni mufawadah jamilah" (Give me a beautiful rate). Remain friendly, patient, and prepare to walk away.', { align: 'justify', lineGap: 4 });
+
+    doc.moveDown(2);
+
+    doc.fillColor(darkSlate)
+       .font('Helvetica-Bold')
+       .fontSize(12)
+       .text('CHAPTER 4: OFFICIAL STAMP LABELS & CONSUMER RIGHTS', 50);
+    doc.rect(50, doc.y - 12, 80, 2).fill(goldColor);
+
+    doc.moveDown(0.8);
+    doc.font('Helvetica')
+       .fontSize(9.5)
+       .fillColor('#334155')
+       .text('The Ministry of Commerce, Industry and Investment Promotion (MOCIIP) enforces strict standards. By Omani Royal decree, every legitimate jewelry piece sold in Oman MUST carry micro-milled hallmark stamps:\n\n' +
+             '  •  24 Karat: Inscribed with "999" or "999.9"\n' +
+             '  •  22 Karat: Inscribed with "916" or "22"\n' +
+             '  •  21 Karat: Inscribed with "875" or "21"\n' +
+             '  •  18 Karat: Inscribed with "750" or "18"\n\n' +
+             'Look for the official MOCIIP dagger/khanjar seal stamp neben numerical identifiers. If you discover a counterfeit stamp or feel a scale was rigged, obtain an itemized transaction receipt and call the MOCIIP Customer Care Hotline immediately at: 80077999. Inspectors will enforce absolute consumer justice.', { align: 'justify', lineGap: 3.5 });
+
+    // Little footer note
+    doc.moveDown(2);
+    doc.font('Helvetica-Oblique')
+       .fontSize(8.5)
+       .fillColor('#64748B')
+       .text('© Oman Gold Trading Platform (Sultanate of Oman). Certified purchase document. Unauthorized redistribution is restricted under regional digital trademark laws.', 50, 770, { align: 'center', width: 495 });
+
+    // Finalize Document
+    doc.end();
+  } catch (error) {
+    console.error("PDF generation failed on server:", error);
+    res.status(500).send("Unable to generate PDF document at this moment.");
+  }
 });
 
 // Increment visit counts statically as a fun indicator

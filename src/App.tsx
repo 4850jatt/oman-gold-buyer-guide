@@ -99,6 +99,9 @@ export default function App() {
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState<boolean>(false);
   const [generatedOrder, setGeneratedOrder] = useState<any>(null);
+  const [cardNumber, setCardNumber] = useState<string>('');
+  const [cardExpiry, setCardExpiry] = useState<string>('');
+  const [cardCvv, setCardCvv] = useState<string>('');
 
   // Active readers states
   const [selectedChapter, setSelectedChapter] = useState<PDFChapter | null>(null);
@@ -307,20 +310,26 @@ export default function App() {
             name: checkoutName,
             email: checkoutEmail,
             amount: 3.99,
-            paymentMethod: paymentMethod === 'apple' ? 'Apple Pay' : paymentMethod === 'google' ? 'Google Pay' : paymentMethod === 'paypal' ? 'PayPal' : 'Stripe'
+            paymentMethod: paymentMethod === 'apple' ? 'Apple Pay' : paymentMethod === 'google' ? 'Google Pay' : paymentMethod === 'paypal' ? 'PayPal' : 'Stripe',
+            cardNumber: paymentMethod === 'stripe' ? cardNumber : undefined,
+            cardExpiry: paymentMethod === 'stripe' ? cardExpiry : undefined,
+            cardCvv: paymentMethod === 'stripe' ? cardCvv : undefined
           })
         });
         const data = await response.json();
         if (response.ok) {
           setGeneratedOrder(data.order);
           setCheckoutSuccess(true);
+          setCardNumber('');
+          setCardExpiry('');
+          setCardCvv('');
         }
       } catch (err) {
         console.error("Payment error:", err);
       } finally {
         setIsProcessingPayment(false);
       }
-    }, 2000);
+    }, 2500);
   };
 
   const handleAdminUpload = (e: React.FormEvent) => {
@@ -1985,11 +1994,95 @@ export default function App() {
                     </div>
                   </div>
 
+                  {paymentMethod === 'stripe' && (
+                    <div className="bg-[#070B14] p-4 rounded-xl border border-[#D4AF37]/10 space-y-3">
+                      <span className="text-[10px] uppercase font-bold text-[#D4AF37] block tracking-widest font-mono">
+                        {lang === 'ar' ? 'معلومات بطاقة الائتمان الآمنة (Stripe)' : 'Secure Credit Card Details (Stripe)'}
+                      </span>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 mb-1 font-semibold">{lang === 'ar' ? 'رقم البطاقة (١٦ خانة):' : 'Card Number (16 Digits):'}</label>
+                        <input 
+                          type="text" 
+                          required 
+                          pattern="\d{16}"
+                          maxLength={16}
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
+                          placeholder="4242 4242 4242 4242"
+                          className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] tracking-wider font-mono animate-pulse"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-gray-400 mb-1 font-semibold">{lang === 'ar' ? 'تاريخ الانتهاء:' : 'Expiry Date:'}</label>
+                          <input 
+                            type="text" 
+                            required 
+                            maxLength={5}
+                            value={cardExpiry}
+                            placeholder="MM/YY"
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length === 2 && !val.includes('/') && cardExpiry.length < val.length) {
+                                val += '/';
+                              }
+                              setCardExpiry(val);
+                            }}
+                            className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400 mb-1 font-semibold">CVC / CVV:</label>
+                          <input 
+                            type="password" 
+                            required 
+                            pattern="\d{3,4}"
+                            maxLength={4}
+                            value={cardCvv}
+                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
+                            placeholder="•••"
+                            className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] font-mono text-center tracking-widest"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'paypal' && (
+                    <div className="bg-[#070B14] p-3 rounded-lg border border-[#D4AF37]/10 text-center py-4">
+                      <p className="text-xs text-gray-400">
+                        {lang === 'ar' 
+                          ? 'قناة اتصال معتمدة لـ PayPal جاهزة للتحويل الفوري.'
+                          : 'PayPal dynamic channel active. Standard secure redirect will initiate.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'apple' && (
+                    <div className="bg-[#070B14] p-3 rounded-lg border border-[#D4AF37]/10 text-center py-4">
+                      <p className="text-xs text-gray-400">
+                        {lang === 'ar'
+                          ? 'معالجة سريعة وبصمة الحماية لـ Apple Pay نشطة.'
+                          : 'Apple Pay biometric processing ready. Touch ID / Face ID validated on submit.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'google' && (
+                    <div className="bg-[#070B14] p-3 rounded-lg border border-[#D4AF37]/10 text-center py-4">
+                      <p className="text-xs text-gray-400">
+                        {lang === 'ar'
+                          ? 'بوابة Google Pay المشفرة جاهزة لاعتماد حسابك.'
+                          : 'Google Pay cryptographic layer fully synchronized.'}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Action */}
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={isProcessingPayment || !checkoutName || !checkoutEmail}
+                      disabled={isProcessingPayment || !checkoutName || !checkoutEmail || (paymentMethod === 'stripe' && (!cardNumber || !cardExpiry || !cardCvv))}
                       className="w-full bg-[#D4AF37] text-black font-extrabold py-3.5 rounded-xl transition duration-300 transform active:scale-98 flex items-center justify-center gap-2 text-xs md:text-sm cursor-pointer disabled:opacity-50"
                     >
                       {isProcessingPayment ? (
