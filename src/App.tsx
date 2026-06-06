@@ -5,7 +5,7 @@ import {
   FAQ_LIST, 
   BLOG_ARTICLES_LIST 
 } from './data';
-import { GoldPrice, Order, Lead, AdminAnalytics, PDFChapter, BlogArticle } from './types';
+import { FAQItem, GoldPrice, Order, Lead, AdminAnalytics, PDFChapter, BlogArticle } from './types';
 import MetalDashboard from './components/MetalDashboard';
 import Calculators from './components/Calculators';
 import ThreeCanvas from './components/ThreeCanvas';
@@ -42,6 +42,33 @@ import {
   Users,
   RefreshCw
 } from 'lucide-react';
+
+interface FaqRowProps {
+  faq: FAQItem;
+  lang: 'ar' | 'en';
+}
+
+const FaqRow: React.FC<FaqRowProps> = ({ faq, lang }) => {
+  const [isOpenF, setIsOpenF] = useState<boolean>(false);
+  return (
+    <div className="bg-[#0F172A]/80 border border-[#D4AF37]/15 rounded-xl overflow-hidden transition duration-300">
+      <button
+        onClick={() => setIsOpenF(!isOpenF)}
+        className="w-full text-right p-5 flex items-center justify-between text-white font-bold text-sm md:text-base cursor-pointer"
+        style={{ textAlign: lang === 'ar' ? 'right' : 'left' }}
+      >
+        <span>{lang === 'ar' ? faq.questionAr : faq.questionEn}</span>
+        <ChevronDown className={`w-5 h-5 text-[#D4AF37] transform transition duration-300 ${isOpenF ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpenF && (
+        <div className="p-5 pt-0 text-xs md:text-sm text-gray-300 leading-relaxed border-t border-[#D4AF37]/5 bg-black/20">
+          {lang === 'ar' ? faq.answerAr : faq.answerEn}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function App() {
   // Global States
@@ -995,27 +1022,9 @@ export default function App() {
             </div>
 
             <div className="space-y-4">
-              {FAQ_LIST.map((faq) => {
-                const [isOpenF, setIsOpenF] = useState<boolean>(false);
-                return (
-                  <div key={faq.id} className="bg-[#0F172A]/80 border border-[#D4AF37]/15 rounded-xl overflow-hidden transition duration-300">
-                    <button
-                      onClick={() => setIsOpenF(!isOpenF)}
-                      className="w-full text-right p-5 flex items-center justify-between text-white font-bold text-sm md:text-base cursor-pointer"
-                      style={{ textAlign: lang === 'ar' ? 'right' : 'left' }}
-                    >
-                      <span>{lang === 'ar' ? faq.questionAr : faq.questionEn}</span>
-                      <ChevronDown className={`w-5 h-5 text-[#D4AF37] transform transition duration-300 ${isOpenF ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {isOpenF && (
-                      <div className="p-5 pt-0 text-xs md:text-sm text-gray-300 leading-relaxed border-t border-[#D4AF37]/5 bg-black/20">
-                        {lang === 'ar' ? faq.answerAr : faq.answerEn}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {FAQ_LIST.map((faq) => (
+                <FaqRow key={faq.id} faq={faq} lang={lang} />
+              ))}
             </div>
           </section>
 
