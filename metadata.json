@@ -1,0 +1,6 @@
+{
+  "name": "Oman Gold Buyer Guide",
+  "description": "Premium luxury Arabic-inspired digital sales and guide platform with live Omani gold market tracking, investment calculators, and AI assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
