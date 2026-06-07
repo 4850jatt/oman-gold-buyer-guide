@@ -46,31 +46,43 @@ export default function AIChatWidget({ lang }: AIChatWidgetProps) {
         body: JSON.stringify({ message: userMsg, history: messages })
       });
 
-      const data = await response.json();
-      
-      if (response.ok) {
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        const data = await response.json();
         setMessages(prev => [...prev, { sender: 'bot', text: data.text, isDemo: data.isDemo }]);
       } else {
-        setMessages(prev => [
-          ...prev, 
-          { 
-            sender: 'bot', 
-            text: lang === 'ar'
-              ? 'معذرة، لم أستطع الاتصال بالخادم الرئيسي حالياً. يرجى التأكد من اتصال الإنترنت وإعادة التجربة.'
-              : 'I apologize, I could not reach Al-Khonji database. Please verify your connection and try again.'
-          }
-        ]);
+        throw new Error("Backend offline or non-JSON returned");
       }
     } catch (e) {
-      setMessages(prev => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: lang === 'ar'
-            ? 'خطأ في معالجة طلب المحادثة العمانية. هل ترغب بسؤالي عن عيارات الذهب بدلاً من ذلك؟'
-            : 'Error communicating with gold advisor feed. Would you like to check Omani Karats instead?'
+      console.warn("AI Chat server endpoint unavailable, invoking local Omani Gold advisory matrix fallback:", e);
+      
+      // Determine user intent and formulate dynamic expert responses client-side
+      const msgLower = userMsg.toLowerCase();
+      let reply = "";
+
+      if (lang === 'ar') {
+        if (msgLower.includes('مصنعية') || msgLower.includes('تفاوض') || msgLower.includes('خصم') || msgLower.includes('أجور') || msgLower.includes('اجور')) {
+          reply = "للتفاوض على المصنعية (أجور الصياغة) بأسواق عمان، اطلب من الصائغ أولاً فصل كلفة جرام الذهب الأساسي لليوم بالكامل عن كلفة العمل اليدوي. للآلات والقصات البسيطة، يجب ألا تتجاوز المصنعية 1.5 إلى 2 ريال عماني للجرام بحد أقصى. أما القطع الفنية التراثية يدوية الصنع الراقية، فتتراوح بين 3 إلى 3.5 ر.ع. واجه البائع بثقة واطلب دائماً المفاصلة بعبارة 'عطيني مفاوضة جميلة تليق بك'!";
+        } else if (msgLower.includes('عيار') || msgLower.includes('22') || msgLower.includes('24') || msgLower.includes('21') || msgLower.includes('18') || msgLower.includes('نقاء')) {
+          reply = "التصنيفات المعتمدة للذهب في سلطنة عمان تحت رقابة دائرة فحص المعادن:\n- عيار 24 (99.9% نقاء): دهب خالص نقي جداً، مخصص للسبائك والليرات الاستثمارية (Suja).\n- عيار 22 (91.6% نقاء): المعيار الخليجي الكلاسيكي للأعراس والقلائد الفاخرة لجماله وقوته.\n- عيار 21 (87.5% نقاء): متين وممتاز للأساور والاستعمال اليومي المتكرر.\n- عيار 18 (75.0% نقاء): قوي جداً ويستخدم غالباً في قطع الألماس لضمان ثبات الأحجار الكريمة.";
+        } else if (msgLower.includes('دمغة') || msgLower.includes('طابع') || msgLower.includes('ختم') || msgLower.includes('وزارة') || msgLower.includes('تجارة') || msgLower.includes('mociip')) {
+          reply = "تلزم قوانين وزارة التجارة والصناعة وترويج الاستثمار العمانية (MOCIIP) بوجود دمغات فحص مجهرية على كل حلي تباع بمسقط. ابحث عن ختم '916' لعيار 22، وختم '875' لعيار 21، وختم '750' لعيار 18. وتأكد من وجود رمز الخنجر الصغير الدال على الدمغة الرسمية. تجنب الصاغة الذين يعارضون تسليمك فاتورة مفصلة بالجرام والعيار وبدون دمغة!";
+        } else {
+          reply = "أهلاً بك! أنا مرشدك الذكي 'الخنجي' لخبراء الذهب العماني. كخبير مالي متمرس، أنصحك دوماً بفصل 'أجور المصنعية' عن سعر الذهب الخام وتتبع مؤشرنا اللحظي. يمكنك سؤالي عن دمغات وزارة التجارة (MOCIIP)، أو طرق خفض الأسعار بنسبة 30%، أو شراء دليلك الاستثماري الفاخر المباشر بـ ٣.٩٩ ر.ع فقط لادخار مضمون.";
         }
-      ]);
+      } else {
+        if (msgLower.includes('negotiate') || msgLower.includes('charge') || msgLower.includes('making') || msgLower.includes('bargain') || msgLower.includes('masna')) {
+          reply = "To negotiate making charges (Al-Masna'eyah) in Omani gold souqs like Muttrah or Ruwi, always demand the seller to isolate the raw metal weight from their labor fees. Machine-made items should carry 1.5 to 2.0 OMR per gram maximum. High-end traditional Omani hand-filigree works go around 3 to 3.5 OMR/g. Use friendly local phrases like 'Kam aakhir mufawadah?' to secure a 30% markdown!";
+        } else if (msgLower.includes('karat') || msgLower.includes('22') || msgLower.includes('24') || msgLower.includes('21') || msgLower.includes('18') || msgLower.includes('purity')) {
+          reply = "Regulated gold purities in the Sultanate of Oman are strictly monitored:\n- 24K (99.9% pure): Ultra-rich golden color, very malleable. Reserved exclusively for investment bullion bars & commemorative sovereign coins.\n- 22K (91.6% pure / 916 Stamp): The default gulf bridal standard. Perfect balance of gold luster and structural strength.\n- 21K (87.5% pure): Sturdy, great for daily necklaces.\n- 18K (75.0% pure): Highest durability, optimal for holding heavy premium diamonds and gemstones securely.";
+        } else if (msgLower.includes('hallmark') || msgLower.includes('stamp') || msgLower.includes('mociip') || msgLower.includes('ministry') || msgLower.includes('fake') || msgLower.includes('seal')) {
+          reply = "Under Omani consumer protection watch, all legal jewelry must bear official micro-milled stamp markings regulated by the Ministry of Commerce (MOCIIP): '916' for 22K, '875' for 21K, and '750' for 18K. These stamps sit beside the tiny Omani Khanjar certification icon of purity. Never buy physical items that lack these official markings!";
+        } else {
+          reply = "Welcome to Al-Khonji Gold Advisor! I am your premium trading partner. To maximize your wealth in Muscat's physical Souqs, you must focus on the core gold weight and limit craftsmanship premiums. Ask me anything about making charge negotiation tactics, official MOCIIP hallmarks, or get our licensed buyer handbook for a discounted bargain of 3.99 OMR!";
+        }
+      }
+
+      setMessages(prev => [...prev, { sender: 'bot', text: reply, isDemo: true }]);
     } finally {
       setIsLoading(false);
     }
