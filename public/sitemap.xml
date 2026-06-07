@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- HOME PAGE -->
+  <url>
+    <loc>https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/</loc>
+    <lastmod>2026-06-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.00</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/?lang=ar"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/?lang=en"/>
+  </url>
+
+  <!-- ABOUT PAGE / SECTION -->
+  <url>
+    <loc>https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/about</loc>
+    <lastmod>2026-06-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- PDF CHAPTER PREVIEW -->
+  <url>
+    <loc>https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/preview</loc>
+    <lastmod>2026-06-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- BLOG ARTICLES SECTION -->
+  <url>
+    <loc>https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/blog</loc>
+    <lastmod>2026-06-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- CONTACT & SUPPORT PAGE -->
+  <url>
+    <loc>https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/contact</loc>
+    <lastmod>2026-06-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+
+</urlset>

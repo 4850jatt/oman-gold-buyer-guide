@@ -1,0 +1,14 @@
+# Oman Gold Trading Platform - SEO Robots Directives
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+Disallow: /api/
+Disallow: /admin
+Disallow: /api/download
+Disallow: /api/admin/analytics
+
+# XML Sitemap Location Accelerator
+Sitemap: https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/sitemap.xml

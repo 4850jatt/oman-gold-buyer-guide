@@ -102,6 +102,7 @@ export default function App() {
   const [cardNumber, setCardNumber] = useState<string>('');
   const [cardExpiry, setCardExpiry] = useState<string>('');
   const [cardCvv, setCardCvv] = useState<string>('');
+  const [paymentError, setPaymentError] = useState<string>('');
 
   // Active readers states
   const [selectedChapter, setSelectedChapter] = useState<PDFChapter | null>(null);
@@ -262,6 +263,74 @@ export default function App() {
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
 
+  // Synchronize Tab Title and Meta tags with the App state dynamically (Advanced SEO Crawler alignment)
+  useEffect(() => {
+    let title = '';
+    let desc = '';
+    
+    if (lang === 'ar') {
+      switch (activePage) {
+        case 'home':
+          title = 'سعر الذهب في سلطنة عمان اليوم | دليل المشتري الذكي وشارت مباشر';
+          desc = 'بوابتك الذكية لتتبع ومراقبة أسعار جرام الذهب اليوم في مسقط. حاسبة دقيقة لتجنب رسوم المصنعية المرتفعة، وتفاصيل طوابع دمغة وزارة التجارة.';
+          break;
+        case 'about':
+          title = 'من نحن | الخنجي لخبراء الصاغة والذهب العماني';
+          desc = 'نبذة عن منصة الخنجي الاستشارية وتراخيص الفحص والمطابقة الصارمة للمعادن الثمينة والذهب في سلطنة عمان.';
+          break;
+        case 'preview':
+          title = 'تصفح فصول كتاب الذهب العماني | الدليل الرقمي الأمثل';
+          desc = 'ادرس مجاناً نماذج من فصول الدليل الشامل لتفادي المشاكل والدمغات المغشوشة بكافة أسواق بمسقط والروي ومطرح.';
+          break;
+        case 'blog':
+          title = 'المدونة والاستقصاء المالي للذهب | مقالات الخبراء في عمان';
+          desc = 'مقالات متجددة وتحليلات عميقة لأسعار سبائك الذهب واستراتيجيات الشراء الناجح في أسواق سلطنة عمان.';
+          break;
+        case 'contact':
+          title = 'اتصل بفريق الاستشارات | حجز استشارات شراء الذهب بمسقط';
+          desc = 'دعم مباشر وإجابات لأسئلتك المتعلقة بشهادات الأوزان وأجهزة الاختبار وفحص السبائك التقليدية بأسواق مطرح ونزوى.';
+          break;
+        default:
+          title = 'منصة أسعار وتحليلات الذهب في سلطنة عمان';
+          desc = 'تتبع أسعار الذهب والفضة اليوم في مسقط وحساب الكلفة بدقة تامة.';
+      }
+    } else {
+      switch (activePage) {
+        case 'home':
+          title = 'Live Oman Gold Price Today | Smart Buyer Manual & Spot Charts';
+          desc = 'Track Omani Rial gold rates per gram in real-time. Calculate and negotiate making charges (Al-Masna\'eyah) in Muscat, Muttrah and Ruwi Souqs.';
+          break;
+        case 'about':
+          title = 'About Us | Al-Khonji Gold Advisory Experts';
+          desc = 'Learn about our deep Omani jewelry lineage, compliance standards, and our focus on gold trade transparency.';
+          break;
+        case 'preview':
+          title = 'Preview Ultimate Omani Gold PDF Chapters';
+          desc = 'Read sample insights on Archimedes specific gravity, 916 hallmarks, and how Omani laws safeguard buyers from counterfeit items.';
+          break;
+        case 'blog':
+          title = 'Oman Gold Investor Blog | Expert Buying Strategies';
+          desc = 'In-depth market insights and technical analysis of precious metals performance, hallmarks, and negotiation scripts in Oman.';
+          break;
+        case 'contact':
+          title = 'Contact Al-Khonji Advisory | Muscat Gold Trade Assistance';
+          desc = 'Connect with licensed Omani gold appraisers to evaluate certified kilograms, gold bars, and heritage estate jewelry.';
+          break;
+        default:
+          title = 'Oman Gold Price Index & Complete Buying Program';
+          desc = 'Live spot rate monitoring, metal calculators, and comprehensive consumer protection checklists in Muscat.';
+      }
+    }
+    
+    document.title = title;
+    
+    // Dynamically update meta description to prevent crawler confusion in React SPA model
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', desc);
+    }
+  }, [activePage, lang]);
+
   const handlePriceUpdate = (newPrices: GoldPrice) => {
     setCurrentPrices(newPrices);
   };
@@ -300,7 +369,40 @@ export default function App() {
     e.preventDefault();
     if (!checkoutName || !checkoutEmail) return;
 
+    setPaymentError('');
     setIsProcessingPayment(true);
+
+    // Client-side validations for Stripe
+    if (paymentMethod === 'stripe') {
+      const cleanCard = cardNumber.replace(/\D/g, '');
+      if (cleanCard.length !== 16) {
+        setPaymentError(lang === 'ar' ? 'رقم البطاقة غير مكتمل، يرجى إدخال ١٦ رقماً.' : 'Incomplete card number. Please enter exactly 16 digits.');
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      const matchExpiry = cardExpiry.trim().match(/^(\d{2})\/(\d{2})$/);
+      if (!matchExpiry) {
+        setPaymentError(lang === 'ar' ? 'تاريخ انتهاء الصلاحية غير صالح (تنسيق MM/YY).' : 'Invalid expiry date format. Please use MM/YY.');
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      const month = parseInt(matchExpiry[1], 10);
+      if (month < 1 || month > 12) {
+        setPaymentError(lang === 'ar' ? 'شهر الانتهاء غير صالح، يجب أن يكون بين ٠١ و ١٢.' : 'Invalid expiry month. Must be between 01 and 12.');
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      const cleanCvv = cardCvv.replace(/\D/g, '');
+      if (cleanCvv.length < 3 || cleanCvv.length > 4) {
+        setPaymentError(lang === 'ar' ? 'الرمز الأمني (CVC/CVV) يجب أن يتكون من ٣ أو ٤ أرقام.' : 'Security code (CVC/CVV) must be 3 or 4 digits.');
+        setIsProcessingPayment(false);
+        return;
+      }
+    }
+
     setTimeout(async () => {
       try {
         const response = await fetch('/api/orders', {
@@ -311,7 +413,7 @@ export default function App() {
             email: checkoutEmail,
             amount: 3.99,
             paymentMethod: paymentMethod === 'apple' ? 'Apple Pay' : paymentMethod === 'google' ? 'Google Pay' : paymentMethod === 'paypal' ? 'PayPal' : 'Stripe',
-            cardNumber: paymentMethod === 'stripe' ? cardNumber : undefined,
+            cardNumber: paymentMethod === 'stripe' ? cardNumber.replace(/\D/g, '') : undefined,
             cardExpiry: paymentMethod === 'stripe' ? cardExpiry : undefined,
             cardCvv: paymentMethod === 'stripe' ? cardCvv : undefined
           })
@@ -323,13 +425,17 @@ export default function App() {
           setCardNumber('');
           setCardExpiry('');
           setCardCvv('');
+          setPaymentError('');
+        } else {
+          setPaymentError(data.error || (lang === 'ar' ? 'حدث خطأ أثناء معالجة الدفع.' : 'An error occurred while processing checkout.'));
         }
       } catch (err) {
         console.error("Payment error:", err);
+        setPaymentError(lang === 'ar' ? 'فشل الاتصال الآمن مع خادم البنك.' : 'Secure banking server connection timeout.');
       } finally {
         setIsProcessingPayment(false);
       }
-    }, 2500);
+    }, 2000);
   };
 
   const handleAdminUpload = (e: React.FormEvent) => {
@@ -1859,7 +1965,7 @@ export default function App() {
                 /* Successful success scenario */
                 <div className="text-center space-y-6 py-6 font-sans">
                   <div className="h-16 w-16 bg-[#D4AF37]/20 border-2 border-[#D4AF37] text-[#D4AF37] rounded-full mx-auto flex items-center justify-center animate-bounce">
-                    <CheckCircle2 className="w-10 h-10" />
+                    <CheckCircle2 className="w-10 h-10 animate-ping" />
                   </div>
                   
                   <div className="space-y-2">
@@ -2004,12 +2110,16 @@ export default function App() {
                         <input 
                           type="text" 
                           required 
-                          pattern="\d{16}"
-                          maxLength={16}
+                          maxLength={19}
                           value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
+                            const formatted = raw.replace(/(.{4})/g, '$1 ').trim();
+                            setCardNumber(formatted);
+                            setPaymentError('');
+                          }}
                           placeholder="4242 4242 4242 4242"
-                          className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] tracking-wider font-mono animate-pulse"
+                          className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] tracking-wider font-mono text-center"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
@@ -2022,11 +2132,13 @@ export default function App() {
                             value={cardExpiry}
                             placeholder="MM/YY"
                             onChange={(e) => {
-                              let val = e.target.value;
-                              if (val.length === 2 && !val.includes('/') && cardExpiry.length < val.length) {
-                                val += '/';
+                              const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              let formatted = raw;
+                              if (raw.length > 2) {
+                                formatted = `${raw.slice(0, 2)}/${raw.slice(2, 4)}`;
                               }
-                              setCardExpiry(val);
+                              setCardExpiry(formatted);
+                              setPaymentError('');
                             }}
                             className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] font-mono text-center"
                           />
@@ -2036,10 +2148,12 @@ export default function App() {
                           <input 
                             type="password" 
                             required 
-                            pattern="\d{3,4}"
                             maxLength={4}
                             value={cardCvv}
-                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
+                            onChange={(e) => {
+                              setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4));
+                              setPaymentError('');
+                            }}
                             placeholder="•••"
                             className="w-full bg-slate-950 border border-[#D4AF37]/25 rounded-lg p-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] font-mono text-center tracking-widest"
                           />
@@ -2078,12 +2192,19 @@ export default function App() {
                     </div>
                   )}
 
+                  {/* Payment validation error feedback banner */}
+                  {paymentError && (
+                    <div className="bg-red-500/15 border border-red-500/30 text-red-400 text-xs rounded-xl p-3 text-center font-semibold font-sans animate-fade-in">
+                      ⚠️ {paymentError}
+                    </div>
+                  )}
+
                   {/* Action */}
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={isProcessingPayment || !checkoutName || !checkoutEmail || (paymentMethod === 'stripe' && (!cardNumber || !cardExpiry || !cardCvv))}
-                      className="w-full bg-[#D4AF37] text-black font-extrabold py-3.5 rounded-xl transition duration-300 transform active:scale-98 flex items-center justify-center gap-2 text-xs md:text-sm cursor-pointer disabled:opacity-50"
+                      disabled={isProcessingPayment || !checkoutName || !checkoutEmail}
+                      className="w-full bg-[#D4AF37] hover:bg-[#b49028] text-black font-extrabold py-3.5 rounded-xl transition duration-300 transform active:scale-98 flex items-center justify-center gap-2 text-xs md:text-sm cursor-pointer disabled:opacity-50"
                     >
                       {isProcessingPayment ? (
                         <>
