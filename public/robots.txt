@@ -1,4 +1,4 @@
-# Oman Gold Trading Platform - SEO Robots Directives
+# Oman Gold Trading Platform - SEO & AI Crawler Robots Directives
 User-agent: *
 Allow: /
 Allow: /blog
@@ -10,5 +10,70 @@ Disallow: /admin
 Disallow: /api/download
 Disallow: /api/admin/analytics
 
-# XML Sitemap Location Accelerator
+# --- GENERATIVE AI ENGINE CRITICAL CRAWLER HARVEST ALLOWANCES (AIO / GEO) ---
+User-agent: GPTBot
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: Claude-Web
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: Google-Extended
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: cohere-ai
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: Omgili
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+User-agent: anthropic
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /preview
+Allow: /contact
+
+# Programmatic AI System Knowledge Maps
 Sitemap: https://ais-pre-loeiqhhbjxzu4vbceh2dwe-281486229653.europe-west3.run.app/sitemap.xml
+
